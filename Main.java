@@ -63,7 +63,7 @@ public class Main {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("GET");
         connection.setDoInput(true);
-        connection.setRequestProperty("Accept", "text/csv");
+        connection.setRequestProperty("Accept", "application/sparql-results+json");
         Scanner s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
         String result = s.hasNext() ? s.next() : "";
         s.close();
