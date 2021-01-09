@@ -2,6 +2,7 @@
 
 import requests
 import json
+import os
 from pathlib import Path
 
 import spotipy
@@ -12,8 +13,9 @@ from credentials import client_id, client_secret
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-PLAYLIST_IDS_PATH = 'playlists.txt'
-RESULTS_PATH = 'spotify_data_chunk.json'
+PLAYLIST_IDS_PATH = Path('playlists.txt')
+RESULTS_PATH = Path('spotify_data_chunk.json')
+ARTIST_IDS_PATH = Path('spotify_ids_chunk.json')
 
 def divide_chunks(l, n): 
     for i in range(0, len(l), n):  
@@ -39,9 +41,11 @@ def get_artists(ids):
     return artists_all
 
 
-with open(Path(PLAYLIST_IDS_PATH)) as f:
+with open(PLAYLIST_IDS_PATH) as f:
     ps = f.read()
     ps = [p.strip() for p in ps.split(',')]
+    
+os.remove(PLAYLIST_IDS_PATH)
     
 artist_ids = []
 for p in ps:
@@ -49,5 +53,8 @@ for p in ps:
 
 artists = get_artists(list(set(artist_ids)))
 
-with open(Path(RESULTS_PATH), 'w') as f:
+with open(RESULTS_PATH, 'w') as f:
     json.dump(artists, f)
+    
+with open(ARTIST_IDS_PATH, 'w') as f:
+    f.write(', '.join(artist_ids))
