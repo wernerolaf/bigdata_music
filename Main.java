@@ -3,16 +3,26 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
+    	
+    	String test=open("filename_to_read");
+    	//String test="5x2Ufw4gSPVw4TNcGCpFT1, 0tdKRrbItnLj40yUFi23jx";
+    	String[] list=test.split(", ");
+    	for (int i = 0;i<list.length; i++) {
+    		  list[i]="\""+list[i]+"\"";
+    		}
+    	String converted=String.join(" ", list);
+    	System.out.print(converted);
     	String query="Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
     			+ "Where{\n"
     			+ "  #Q483501\n"
-    			+ "  VALUES ?country {wd:Q36}\n"
+    			+ "  VALUES ?id {"+converted+"}\n"
     			+ "  ?human wdt:P31 wd:Q5;\n"
     			+ "         wdt:P1902 ?id;\n"
     			+ "         wdt:P27 ?country;\n"
@@ -53,11 +63,24 @@ public class Main {
     			+ "      BIND(IF(Bound(?death),YEAR(xsd:dateTime(?death))-YEAR(xsd:dateTime(?birth)),YEAR(NOW())-YEAR(xsd:dateTime(?birth))) AS ?age)\n"
     			+ "  }";
     	String result;
-    	result=open(query);
-    	send_csv("sample.csv",result);
+    	result=get_wikidata(query);
+    	System.out.println(result);
+    	send_json("sample.csv",result);
     }
 
-    public static String open(String query) throws IOException {
+    public static String open(String fileName) throws IOException {
+        System.out.println("\n -- OPEN FILE --");
+        URL url = new URL("http://localhost:50070/webhdfs/v1/user/Werner/" + fileName + "?user.name=hdfs&op=OPEN");
+        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setDoInput(true);
+        Scanner s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
+        String result = s.hasNext() ? s.next() : "";
+        s.close();
+        return(result);
+    }
+    
+    public static String get_wikidata(String query) throws IOException {
         System.out.println("\n -- CONNECT --");
         URL url = new URL("https://query.wikidata.org/sparql?query="+URLEncoder.encode(query , "UTF-8"));
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -70,7 +93,7 @@ public class Main {
         return result;
     }
     
-    public static void send_csv(String fileName, String fileText) throws IOException {
+    public static void send_json(String fileName, String fileText) throws IOException {
         System.out.println("\n -- CREATE FILE --");
         URL url = new URL("http://localhost:50070/webhdfs/v1/user/Werner/" + fileName + "?user.name=hdfs&op=CREATE");
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
