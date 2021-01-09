@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -13,14 +14,14 @@ public class Main {
 		try {
 			String test = open("spotify_ids_chunk.txt");
 			// String test="5x2Ufw4gSPVw4TNcGCpFT1, 0tdKRrbItnLj40yUFi23jx";
-			String[] list = test.split(", ");
+			String[] list = test.substring(1, test.length()-1).split(", ");
 			for (int i = 0; i < list.length; i++) {
 				list[i] = "\"" + list[i] + "\"";
 			}
 
-			for (int i = 0; i < list.length; i += 20) {
-
-				String converted = String.join(" ", subArray(list, i, i + 20));
+			for (int i = 0; i < list.length; i += 30) {
+				TimeUnit.SECONDS.sleep(2);
+				String converted = String.join(" ", subArray(list, i, i + 30));
 				System.out.print(converted);
 				String query = "Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
 						+ "Where{\n" + "  #Q483501\n" + "  VALUES ?id {" + converted + "}\n"
@@ -30,10 +31,6 @@ public class Main {
 						+ "        }\n" + "  \n" + "  Optional{?human wdt:P21 ?gender2.\n"
 						+ "          ?gender2 rdfs:label ?gender.\n" + "           FILTER(lang(?gender) = \"en\")\n"
 						+ "        }\n" + "  \n" + "  #Optional{?human wdt:P735 ?name2.\n"
-						+ "  #       ?name2 rdfs:label ?name.\n" + "  #      FILTER(lang(?name) = \"en\")\n"
-						+ "  #     }\n" + "  \n" + "  #Optional{?human wdt:P734 ?surname2.\n"
-						+ "  #       ?surname2 rdfs:label ?surname.\n" + "  #       FILTER(lang(?surname) = \"en\")\n"
-						+ "  #     }\n" + "  optional{?human wdt:P1303 ?instrument2.\n"
 						+ "          ?instrument2 rdfs:label ?instrument.\n"
 						+ "          FILTER(lang(?instrument) = \"en\")}\n"
 						+ "  optional{?human wdt:P742 ?pseudonym.}\n" + "  optional{?human wdt:P19 ?birthplace2.\n"
