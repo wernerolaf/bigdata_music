@@ -14,36 +14,47 @@ public class Main {
 		try {
 			String test = open("spotify_ids_chunk.txt");
 			// String test="5x2Ufw4gSPVw4TNcGCpFT1, 0tdKRrbItnLj40yUFi23jx";
-			String[] list = test.substring(1, test.length()-1).split(", ");
+			String[] list = test.substring(1, test.length() - 1).split(", ");
 			for (int i = 0; i < list.length; i++) {
 				list[i] = "\"" + list[i] + "\"";
 			}
 
-			for (int i = 0; i < list.length; i += 30) {
+			for (int i = 0; i < list.length; i += 50) {
 				TimeUnit.SECONDS.sleep(2);
-				String converted = String.join(" ", subArray(list, i, i + 30));
-				System.out.print(converted);
+				String converted = String.join(" ", subArray(list, i, i + 50));
+				System.out.println(converted);
 				String query = "Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
 						+ "Where{\n" + "  #Q483501\n" + "  VALUES ?id {" + converted + "}\n"
-						+ "  ?human wdt:P31 wd:Q5;\n" + "         wdt:P1902 ?id;\n" + "         wdt:P27 ?country;\n"
-						+ "         wdt:P106 ?occupation.\n" + "  ?occupation wdt:P279* wd:Q483501.\n" + "  \n"
-						+ "  Optional{?human rdfs:label ?knownAs.\n" + "          FILTER(lang(?knownAs) = \"en\")\n"
-						+ "        }\n" + "  \n" + "  Optional{?human wdt:P21 ?gender2.\n"
-						+ "          ?gender2 rdfs:label ?gender.\n" + "           FILTER(lang(?gender) = \"en\")\n"
-						+ "        }\n" + "  \n" + "  #Optional{?human wdt:P735 ?name2.\n"
+						+ "?human wdt:P31 wd:Q5;\n"
+						+ "         wdt:P1902 ?id;\n"
+						+ "         wdt:P27 ?country;\n"
+						+ "         wdt:P106 ?occupation.\n"
+						+ "  ?occupation wdt:P279* wd:Q483501.\n"
+						+ "  \n"
+						+ "  Optional{?human rdfs:label ?knownAs.\n"
+						+ "          FILTER(lang(?knownAs) = \"en\")\n"
+						+ "        }\n"
+						+ "  \n"
+						+ "  Optional{?human wdt:P21 ?gender2.\n"
+						+ "          ?gender2 rdfs:label ?gender.\n"
+						+ "           FILTER(lang(?gender) = \"en\")\n"
+						+ "        }\n"
+						+ "  optional{?human wdt:P1303 ?instrument2.\n"
 						+ "          ?instrument2 rdfs:label ?instrument.\n"
 						+ "          FILTER(lang(?instrument) = \"en\")}\n"
-						+ "  optional{?human wdt:P742 ?pseudonym.}\n" + "  optional{?human wdt:P19 ?birthplace2.\n"
+						+ "  optional{?human wdt:P742 ?pseudonym.}\n"
+						+ "  optional{?human wdt:P19 ?birthplace2.\n"
 						+ "          ?birthplace2 rdfs:label ?birthplace.\n"
-						+ "          FILTER(lang(?birthplace) = \"en\")}\n" + "  #optional{?human wdt:P166 ?award.}\n"
-						+ "  optional{?human wdt:P136 ?genre2.\n" + "          ?genre2 rdfs:label ?genre. \n"
-						+ "          FILTER(lang(?genre) = \"en\")}\n" + "  optional{?human wdt:P569 ?birth.}\n"
+						+ "          FILTER(lang(?birthplace) = \"en\")}\n"
+						+ "  optional{?human wdt:P136 ?genre2.\n"
+						+ "          ?genre2 rdfs:label ?genre. \n"
+						+ "          FILTER(lang(?genre) = \"en\")}\n"
+						+ "  optional{?human wdt:P569 ?birth.}\n"
 						+ "  optional{?human wdt:P570 ?death.}\n"
 						+ "      BIND(IF(Bound(?death),YEAR(xsd:dateTime(?death))-YEAR(xsd:dateTime(?birth)),YEAR(NOW())-YEAR(xsd:dateTime(?birth))) AS ?age)\n"
 						+ "  }";
 				String result;
 				result = get_wikidata(query);
-				System.out.println(result);
 				send_json("wikidata_data_chunk.json", result);
 			}
 		} catch (Exception e) {
@@ -56,7 +67,7 @@ public class Main {
 	}
 
 	public static String open(String fileName) throws IOException {
-		Scanner s = null;
+		Scanner s;
 		String result;
 		System.out.println("\n -- OPEN FILE --");
 		URL url = new URL(
@@ -64,8 +75,8 @@ public class Main {
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setRequestMethod("GET");
 		connection.setDoInput(true);
+		s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
 		try {
-			s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
 			result = s.hasNext() ? s.next() : "";
 
 			return (result);
@@ -75,7 +86,7 @@ public class Main {
 	}
 
 	public static String get_wikidata(String query) throws IOException {
-		Scanner s = null;
+		Scanner s;
 		String result;
 		System.out.println("\n -- CONNECT --");
 		URL url = new URL("https://query.wikidata.org/sparql?query=" + URLEncoder.encode(query, "UTF-8"));
@@ -83,12 +94,14 @@ public class Main {
 		connection.setRequestMethod("GET");
 		connection.setDoInput(true);
 		connection.setRequestProperty("Accept", "application/sparql-results+json");
+		s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
 		try {
-			s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
 			result = s.hasNext() ? s.next() : "";
 			return result;
 		} finally {
-			s.close();
+			if (!s.equals(null)) {
+				s.close();
+			}
 		}
 	}
 
