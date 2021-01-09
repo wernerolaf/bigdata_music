@@ -13,9 +13,30 @@ from credentials import client_id, client_secret
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp = spotipy.Spotify(auth_manager=auth_manager)
 
-PLAYLIST_IDS_PATH = Path('playlists.txt')
-RESULTS_PATH = Path('spotify_data_chunk.json')
-ARTIST_IDS_PATH = Path('spotify_ids_chunk.txt')
+# PLAYLIST_IDS_PATH = Path('playlists.txt')
+# RESULTS_PATH = Path('spotify_data_chunk.json')
+# ARTIST_IDS_PATH = Path('spotify_ids_chunk.txt')
+
+PLAYLIST_IDS_PATH = 'playlists.txt'
+RESULTS_PATH = 'spotify_data_chunk.json'
+ARTIST_IDS_PATH = 'spotify_ids_chunk.txt'
+
+def get_hdfs(file_name):
+    response = requests.get("http://localhost:50070/webhdfs/v1/user/bigdata_music/" + file_name + "?user.name=hdfs&op=OPEN")
+    
+    if response.status_code == 200:
+        return response.text
+    else:
+        return None
+
+def delete_hdfs(file_name):
+    response = requests.delete("http://localhost:50070/webhdfs/v1/user/bigdata_music/" + file_name + "?user.name=hdfs&op=DELETE")
+    return response
+
+def put_hdfs(data_dict, file_name):
+    data = json.dumps(data_dict)
+    response = requests.put("http://localhost:50070/webhdfs/v1/user/bigdata_music/" + file_name + "?user.name=hdfs&op=CREATE", data=data)
+    return response
 
 def divide_chunks(l, n): 
     for i in range(0, len(l), n):  
@@ -30,7 +51,6 @@ def get_artists_ids_from_playlist(playlist_id):
     
     return ids
 
-
 def get_artists(ids):
     artists_all = {}
     for ids_chunk in list(divide_chunks(ids, 49)):
@@ -40,21 +60,21 @@ def get_artists(ids):
         })
     return artists_all
 
+#------------------------------------------------------------------------------------------------------
 
-with open(PLAYLIST_IDS_PATH) as f:
-    ps = f.read()
+ps = get_hdfs(PLAYLIST_IDS_PATH)
+
+if ps:
     ps = [p.strip() for p in ps.split(',')]
-    
-os.remove(PLAYLIST_IDS_PATH)
-    
-artist_ids = []
-for p in ps:
-    artist_ids.extend(get_artists_ids_from_playlist(p))
 
-artists = get_artists(list(set(artist_ids)))
+    delete_hdfs(PLAYLIST_IDS_PATH)
 
-with open(RESULTS_PATH, 'w') as f:
-    json.dump(artists, f)
-    
-with open(ARTIST_IDS_PATH, 'w') as f:
-    f.write(', '.join(artist_ids))
+    artist_ids = []
+    for p in ps:
+        artist_ids.extend(get_artists_ids_from_playlist(p))
+
+    artists = get_artists(list(set(artist_ids)))
+
+    put_hdfs(json.dumps(artists), RESULTS_PATH)
+
+    put_hdfs(', '.join(artist_ids), ARTIST_IDS_PATH)
