@@ -15,7 +15,7 @@ sp = spotipy.Spotify(auth_manager=auth_manager)
 
 PLAYLIST_IDS_PATH = Path('playlists.txt')
 RESULTS_PATH = Path('spotify_data_chunk.json')
-ARTIST_IDS_PATH = Path('spotify_ids_chunk.json')
+ARTIST_IDS_PATH = Path('spotify_ids_chunk.txt')
 
 def divide_chunks(l, n): 
     for i in range(0, len(l), n):  

@@ -11,7 +11,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
     	
-    	String test=open("filename_to_read");
+    	String test=open("spotify_ids_chunk.txt");
     	//String test="5x2Ufw4gSPVw4TNcGCpFT1, 0tdKRrbItnLj40yUFi23jx";
     	String[] list=test.split(", ");
     	for (int i = 0;i<list.length; i++) {
@@ -65,12 +65,12 @@ public class Main {
     	String result;
     	result=get_wikidata(query);
     	System.out.println(result);
-    	send_json("sample.csv",result);
+    	send_json("wikidata_data_chunk.json", result);
     }
 
     public static String open(String fileName) throws IOException {
         System.out.println("\n -- OPEN FILE --");
-        URL url = new URL("http://localhost:50070/webhdfs/v1/user/Werner/" + fileName + "?user.name=hdfs&op=OPEN");
+        URL url = new URL("http://localhost:50070/webhdfs/v1/user/bigdata_music/" + fileName + "?user.name=hdfs&op=OPEN");
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("GET");
         connection.setDoInput(true);
@@ -95,7 +95,7 @@ public class Main {
     
     public static void send_json(String fileName, String fileText) throws IOException {
         System.out.println("\n -- CREATE FILE --");
-        URL url = new URL("http://localhost:50070/webhdfs/v1/user/Werner/" + fileName + "?user.name=hdfs&op=CREATE");
+        URL url = new URL("http://localhost:50070/webhdfs/v1/user/bigdata_music/" + fileName + "?user.name=hdfs&op=CREATE");
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("PUT");
         connection.setDoInput(true);
