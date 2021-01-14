@@ -4,24 +4,56 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+
 public class Main {
 
 	public static void main(String[] args) throws IOException {
+		
+		if(args.length < 2){
+	         System.out.println("Usage: consumer <topic> <groupname>");
+	         return;
+	      }
+		int chunk_size=60;
+	      String topic = args[0].toString();
+	      String group = args[1].toString();
+	      Properties props = new Properties();
+	      props.put("bootstrap.servers", "localhost:9092");
+	      props.put("group.id", group);
+	      props.put("enable.auto.commit", "true");
+	      props.put("auto.commit.interval.ms", "1000");
+	      props.put("session.timeout.ms", "30000");
+	      props.put("key.deserializer",          
+	         "org.apache.kafka.common.serialization.ByteArraySerializer");
+	      props.put("value.deserializer", 
+	         "org.apache.kafka.common.serializa-tion.StringDeserializer");
+	      KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(props);
+	      
+	      consumer.subscribe(Arrays.asList(topic));
+	      System.out.println("Subscribed to topic " + topic);
+	      String[] list=new String[60];
+	      int j;
+	      while (true) {
+	    	  j=0;
+	         ConsumerRecords<String, String> records = consumer.poll(60);
+	            for (ConsumerRecord<String, String> record : records) {
+	               System.out.printf("offset = %d, key = %s, value = %s\n", 
+	               record.offset(), record.key(), record.value());
+	               list[j]="\"" + record.value() + "\"";
+	               j+=1;
+	            }
 		try {
-			int chunk_size=60;
-			String test = open("spotify_ids_chunk.txt");
-			// String test="5x2Ufw4gSPVw4TNcGCpFT1, 0tdKRrbItnLj40yUFi23jx";
-			String[] list = test.substring(1, test.length() - 1).split(", ");
-			for (int i = 0; i < list.length; i++) {
-				list[i] = "\"" + list[i] + "\"";
-			}
-			String[] results= new String[list.length/chunk_size+1];
-			for (int i = 0; i < list.length; i += chunk_size) {
-				TimeUnit.SECONDS.sleep(2);
-				String converted = String.join(" ", subArray(list, i, i + chunk_size));
+				String converted = String.join(" ", list);
+			
+			
+				TimeUnit.SECONDS.sleep(1);
 				System.out.println(converted);
 				String query = "Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
 						+ "Where{\n" + "  #Q483501\n" + "  VALUES ?id {" + converted + "}\n"
@@ -55,14 +87,11 @@ public class Main {
 						+ "  }";
 				String result;
 				result = get_wikidata(query);
-				results[i/chunk_size]=result;
 				
-			}
-			String json=merge(results);
-			send_json("wikidata_data_chunk.json", json);
+			
 		} catch (Exception e) {
 			System.out.println(e);
-		}
+		}}
 	}
 
 	public static <T> T[] subArray(T[] array, int beg, int end) {
