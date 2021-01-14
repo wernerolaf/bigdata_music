@@ -60,7 +60,7 @@ public class Kafka {
         Producer<String, String> producer = new KafkaProducer<String, String>(props);
 
         final int chunk_size = 60;
-        String topic = "spotify";
+        String topic = "spotify_ids";
         String group = "group1";
         Properties props2 = new Properties();
         props2.put("bootstrap.servers", "sandbox.hortonworks.com:6667");
@@ -76,49 +76,48 @@ public class Kafka {
         while (true) {
             j = 0;
             ConsumerRecords<String, String> records = consumer.poll(1);
-            System.out.println("Nie wiem jeszcze.");
             for (ConsumerRecord<String, String> record : records) {
                 System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
- 
+
                 list[j] = "\"" + record.value() + "\"";
                 j += 1;
-            if(j==chunk_size){
-            j=0;
-            	
-            try {
-                String converted = joinNonBlank(" ", list);
+                if(j==chunk_size){
+                    j=0;
 
-                TimeUnit.SECONDS.sleep(1);
-                System.out.println(converted);
-                String query = "Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
-                        + "Where{\n" + "  #Q483501\n" + "  VALUES ?id {" + converted + "}\n" + "?human wdt:P31 wd:Q5;\n"
-                        + "         wdt:P1902 ?id;\n" + "         wdt:P27 ?country;\n"
-                        + "         wdt:P106 ?occupation.\n" + "  ?occupation wdt:P279* wd:Q483501.\n" + "  \n"
-                        + "  Optional{?human rdfs:label ?knownAs.\n" + "          FILTER(lang(?knownAs) = \"en\")\n"
-                        + "        }\n" + "  \n" + "  Optional{?human wdt:P21 ?gender2.\n"
-                        + "          ?gender2 rdfs:label ?gender.\n" + "           FILTER(lang(?gender) = \"en\")\n"
-                        + "        }\n" + "  optional{?human wdt:P1303 ?instrument2.\n"
-                        + "          ?instrument2 rdfs:label ?instrument.\n"
-                        + "          FILTER(lang(?instrument) = \"en\")}\n"
-                        + "  optional{?human wdt:P742 ?pseudonym.}\n" + "  optional{?human wdt:P19 ?birthplace2.\n"
-                        + "          ?birthplace2 rdfs:label ?birthplace.\n"
-                        + "          FILTER(lang(?birthplace) = \"en\")}\n" + "  optional{?human wdt:P136 ?genre2.\n"
-                        + "          ?genre2 rdfs:label ?genre. \n" + "          FILTER(lang(?genre) = \"en\")}\n"
-                        + "  optional{?human wdt:P569 ?birth.}\n" + "  optional{?human wdt:P570 ?death.}\n"
-                        + "      BIND(IF(Bound(?death),YEAR(xsd:dateTime(?death))-YEAR(xsd:dateTime(?birth)),YEAR(NOW())-YEAR(xsd:dateTime(?birth))) AS ?age)\n"
-                        + "  }";
-                String result;
-                result = get_wikidata(query);
-                producer.send(new ProducerRecord<String, String>(topicName, list[0], result));
-                
+                    try {
+                        String converted = joinNonBlank(" ", list);
 
-            } catch (Exception e) {
-                System.out.println(e);
-                consumer.close();
-                producer.close();
-            }}
+                        TimeUnit.SECONDS.sleep(1);
+                        System.out.println(converted);
+                        String query = "Select Distinct ?human ?id ?knownAs ?age ?gender ?genre ?instrument ?pseudonym ?birth ?death ?birthplace\n"
+                                + "Where{\n" + "  #Q483501\n" + "  VALUES ?id {" + converted + "}\n" + "?human wdt:P31 wd:Q5;\n"
+                                + "         wdt:P1902 ?id;\n" + "         wdt:P27 ?country;\n"
+                                + "         wdt:P106 ?occupation.\n" + "  ?occupation wdt:P279* wd:Q483501.\n" + "  \n"
+                                + "  Optional{?human rdfs:label ?knownAs.\n" + "          FILTER(lang(?knownAs) = \"en\")\n"
+                                + "        }\n" + "  \n" + "  Optional{?human wdt:P21 ?gender2.\n"
+                                + "          ?gender2 rdfs:label ?gender.\n" + "           FILTER(lang(?gender) = \"en\")\n"
+                                + "        }\n" + "  optional{?human wdt:P1303 ?instrument2.\n"
+                                + "          ?instrument2 rdfs:label ?instrument.\n"
+                                + "          FILTER(lang(?instrument) = \"en\")}\n"
+                                + "  optional{?human wdt:P742 ?pseudonym.}\n" + "  optional{?human wdt:P19 ?birthplace2.\n"
+                                + "          ?birthplace2 rdfs:label ?birthplace.\n"
+                                + "          FILTER(lang(?birthplace) = \"en\")}\n" + "  optional{?human wdt:P136 ?genre2.\n"
+                                + "          ?genre2 rdfs:label ?genre. \n" + "          FILTER(lang(?genre) = \"en\")}\n"
+                                + "  optional{?human wdt:P569 ?birth.}\n" + "  optional{?human wdt:P570 ?death.}\n"
+                                + "      BIND(IF(Bound(?death),YEAR(xsd:dateTime(?death))-YEAR(xsd:dateTime(?birth)),YEAR(NOW())-YEAR(xsd:dateTime(?birth))) AS ?age)\n"
+                                + "  }";
+                        String result;
+                        result = get_wikidata(query);
+                        producer.send(new ProducerRecord<String, String>(topicName, list[0], result));
+
+
+                    } catch (Exception e) {
+                        System.out.println(e);
+                        consumer.close();
+                        producer.close();
+                    }}
             }
-            
+
         }
     }
 
