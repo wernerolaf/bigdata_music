@@ -79,11 +79,14 @@ public class Kafka {
             System.out.println("Nie wiem jeszcze.");
             for (ConsumerRecord<String, String> record : records) {
                 System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
+ 
                 list[j] = "\"" + record.value() + "\"";
                 j += 1;
-            }
+            if(j==chunk_size){
+            j=0;
+            	
             try {
-                String converted = String.join(" ", list);
+                String converted = joinNonBlank(" ", list);
 
                 TimeUnit.SECONDS.sleep(1);
                 System.out.println(converted);
@@ -107,12 +110,15 @@ public class Kafka {
                 String result;
                 result = get_wikidata(query);
                 producer.send(new ProducerRecord<String, String>(topicName, list[0], result));
-                producer.close();
+                
 
             } catch (Exception e) {
                 System.out.println(e);
                 consumer.close();
+                producer.close();
+            }}
             }
+            
         }
     }
 
@@ -120,7 +126,7 @@ public class Kafka {
         return Arrays.copyOfRange(array, beg, Math.min(end, array.length));
     }
 
-    public static String joinNonBlankStringArray(String s[], String separator) {
+    public static String joinNonBlank(String separator, String s[]) {
         StringBuilder sb = new StringBuilder();
         if (s != null && s.length > 0) {
             for (String w : s) {
@@ -140,7 +146,7 @@ public class Kafka {
             String tmp = results[i].split("\"bindings\"")[1];
             results[i] = tmp.substring(4, tmp.lastIndexOf("]") - 1);
         }
-        merged = merged + joinNonBlankStringArray(results, ",") + " ]\n" + "  }\n" + "}";
+        merged = merged + joinNonBlank(",",results) + " ]\n" + "  }\n" + "}";
         return (merged);
     }
 
