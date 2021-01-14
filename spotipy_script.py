@@ -8,10 +8,15 @@ from pathlib import Path
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+from kafka import KafkaProducer
+from kafka.errors import KafkaError
+
 from credentials import client_id, client_secret
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
 sp = spotipy.Spotify(auth_manager=auth_manager)
+
+producer = KafkaProducer(bootstrap_servers=['sandbox.hortonworks.com:6667'], client_id='group1')
 
 # PLAYLIST_IDS_PATH = Path('playlists.txt')
 # RESULTS_PATH = Path('spotify_data_chunk.json')
@@ -55,9 +60,10 @@ def get_artists(ids):
     artists_all = {}
     for ids_chunk in list(divide_chunks(ids, 49)):
         artists = sp.artists(ids_chunk)
-        artists_all.update({
-            artist['id']: artist for artist in artists['artists']
-        })
+        if artists['artists'] is not None:
+            artists_all.update({
+                artist['id']: artist for artist in artists['artists']
+            })
     return artists_all
 
 #------------------------------------------------------------------------------------------------------
@@ -74,7 +80,12 @@ if ps:
         artist_ids.extend(get_artists_ids_from_playlist(p))
 
     artists = get_artists(list(set(artist_ids)))
+    
+    if artists:
+        for a_id, a_data in artists.items():
+            future = producer.send('spotify', json.dumps(a_data).encode())
+    
+#     if artists:
+#         put_hdfs(json.dumps(artists), RESULTS_PATH)
 
-    put_hdfs(json.dumps(artists), RESULTS_PATH)
-
-    put_hdfs(', '.join(artist_ids), ARTIST_IDS_PATH)
+#         put_hdfs(', '.join(artist_ids), ARTIST_IDS_PATH)
