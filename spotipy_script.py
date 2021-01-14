@@ -78,6 +78,9 @@ if ps:
     artist_ids = []
     for p in ps:
         artist_ids.extend(get_artists_ids_from_playlist(p))
+        
+    for a_id in artist_ids:
+        future = producer.send('spotify_ids', json.dumps(a_id).encode())
 
     artists = get_artists(list(set(artist_ids)))
     
