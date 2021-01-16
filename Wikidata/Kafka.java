@@ -72,9 +72,8 @@ public class Kafka {
         consumer.subscribe(Arrays.asList(topic));
         System.out.println("Subscribed to topic " + topic);
         String[] list = new String[chunk_size];
-        int j;
+        int j = 0;
         while (true) {
-            j = 0;
             ConsumerRecords<String, String> records = consumer.poll(1);
             for (ConsumerRecord<String, String> record : records) {
                 System.out.printf("offset = %d, key = %s, value = %s\n", record.offset(), record.key(), record.value());
@@ -159,7 +158,7 @@ public class Kafka {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setDoInput(true);
-        connection.setRequestProperty("Accept", "application/sparql-results+json");
+        connection.setRequestProperty("Accept", "text/csv");
         s = new Scanner(connection.getInputStream()).useDelimiter("\\A");
         try {
             result = s.hasNext() ? s.next() : "";

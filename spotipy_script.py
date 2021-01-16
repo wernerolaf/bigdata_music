@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-import requests
 import json
+import requests
 import os
 from pathlib import Path
 
